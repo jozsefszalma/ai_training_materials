@@ -397,21 +397,7 @@ for i, token_id in enumerate(context):
     
     print(f"{i:<8} {token_id:<12} {display_text:<40} {special_name:<15}")
 
-print("\n" + "─" * 80)
-print("\n💡 KEY OBSERVATIONS:")
-print(f"  • Total tokens in context: {len(context)}")
-print(f"  • Gemma 3 uses <start_of_turn> (ID: 105) and <end_of_turn> (ID: 106)")
-print(f"  • Standard BOS token ID: {tokenizer.bos_token_id}")
-print(f"  • Standard EOS token ID: {tokenizer.eos_token_id}")
 
-# Count special tokens by checking decoded text
-special_count = sum(1 for tid in context 
-                   if tokenizer.decode([tid]) in tokenizer.all_special_tokens 
-                   or (tokenizer.decode([tid]).startswith('<') and tokenizer.decode([tid]).endswith('>')))
-print(f"  • Special tokens found in context: {special_count}")
-print(f"  • Prompt eval count: {result.get('prompt_eval_count', 'N/A')}")
-print(f"  • Response eval count: {result.get('eval_count', 'N/A')}")
-print(f"\n  Structure: <start_of_turn>user\\n[prompt]<end_of_turn>\\n<start_of_turn>model\\n[response]")
 
 #%%
 
