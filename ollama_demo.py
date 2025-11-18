@@ -1,7 +1,12 @@
 #%%
 import requests
 import json
+import base64
+from pathlib import Path
 from transformers import AutoTokenizer
+from PIL import Image
+from io import BytesIO
+import matplotlib.pyplot as plt
 
 # Configuration
 OLLAMA_BASE_URL = "http://localhost:11434"
@@ -397,6 +402,121 @@ for i, token_id in enumerate(context):
     
     print(f"{i:<8} {token_id:<12} {display_text:<40} {special_name:<15}")
 
+#%%
+# =============================================================================
+# EXAMPLE 9: OpenAI-Compatible API - Complete Example with Image, All Roles & Sampling
+# =============================================================================
+print("\n" + "*" * 40)
+print("EXAMPLE 9: OpenAI-Compatible API - Vision with All Features")
+print("*" * 40)
+
+# Load and display the image
+image_path = Path("assets/img1.jpg")
+img = Image.open(image_path)
+
+print(f"\n📸 Loading image: {image_path}")
+print(f"Image size: {img.size} (width x height)")
+print(f"Image mode: {img.mode}")
+
+# Display image inline (for Jupyter/IPython environments)
+plt.figure(figsize=(8, 6))
+plt.imshow(img)
+plt.axis('off')
+plt.title(f"Input Image: {image_path.name}")
+plt.tight_layout()
+plt.show()
+
+# Encode image to base64
+buffered = BytesIO()
+img.save(buffered, format="JPEG")
+img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+print(f"\n✅ Image encoded to base64 ({len(img_base64)} characters)")
+
+# Prepare the request with all bells and whistles
+url = f"{OLLAMA_BASE_URL}/v1/chat/completions"
+payload = {
+    "model": MODEL_NAME,
+    "messages": [
+        {
+            "role": "system",
+            "content": "You are an expert image analyst with deep knowledge in computer vision, object detection, and scene understanding. Provide detailed, accurate, and structured analysis of images."
+        },
+        {
+            "role": "developer",
+            "content": "When labeling images, always provide: 1) Main objects/subjects, 2) Scene context, 3) Notable details, 4) Colors and composition. Be concise but thorough."
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Please analyze and label this image. Describe what you see, including objects, scene, colors, and any notable details."
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{img_base64}"
+                    }
+                }
+            ]
+        }
+    ],
+    "stream": False,
+    # Sampling parameters - all the bells and whistles
+    "temperature": 0.7,      # Controls randomness (0.0 = deterministic, 1.0 = creative)
+    "top_p": 0.9,           # Nucleus sampling (consider top 90% probability mass)
+    "top_k": 40,            # Consider top 40 tokens
+    "max_tokens": 500,      # Maximum tokens to generate
+    "frequency_penalty": 0.0,  # Reduce repetition (-2.0 to 2.0)
+    "presence_penalty": 0.0,   # Encourage new topics (-2.0 to 2.0)
+    "stop": None,           # Stop sequences (e.g., ["\n\n", "END"])
+}
+
+print("\n📤 REQUEST:")
+print(f"POST {url}")
+# Don't print the full base64 image, just show structure
+payload_display = payload.copy()
+payload_display["messages"] = [
+    payload["messages"][0],  # system
+    payload["messages"][1],  # developer
+    {
+        "role": "user",
+        "content": [
+            payload["messages"][2]["content"][0],  # text
+            {
+                "type": "image_url",
+                "image_url": {"url": f"<base64 encoded image: {len(img_base64)} chars>"}
+            }
+        ]
+    }
+]
+print(json.dumps(payload_display, indent=2))
+
+print("\n⏳ Sending request with image...")
+response = requests.post(url, json=payload)
+result = response.json()
+
+print("\n📥 RESPONSE:")
+# Pretty print the response
+if "choices" in result:
+    print(f"\nModel: {result.get('model', 'N/A')}")
+    print(f"Created: {result.get('created', 'N/A')}")
+    print(f"\nAnalysis:")
+    print("─" * 80)
+    print(result['choices'][0]['message']['content'])
+    print("─" * 80)
+    
+    if "usage" in result:
+        print(f"\n📊 Token Usage:")
+        print(f"  Prompt tokens: {result['usage'].get('prompt_tokens', 'N/A')}")
+        print(f"  Completion tokens: {result['usage'].get('completion_tokens', 'N/A')}")
+        print(f"  Total tokens: {result['usage'].get('total_tokens', 'N/A')}")
+    
+    print(f"\nFinish reason: {result['choices'][0].get('finish_reason', 'N/A')}")
+else:
+    # Print full response if structure is different (e.g., error)
+    print(json.dumps(result, indent=2))
 
 
 #%%
