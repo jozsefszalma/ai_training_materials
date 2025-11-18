@@ -75,3 +75,21 @@ for idx1, idx2, description in comparison_pairs:
     print(f"  Cosine Similarity: {similarity:.4f}")
 
 #%%
+# Display model architecture and layer information
+print("\n" + "=" * 80)
+print("MODEL ARCHITECTURE INSPECTION")
+print("=" * 80)
+
+# Option 1: Full architecture
+print("\n--- Full Architecture ---")
+embedding_model.print_architecture()
+
+# Option 2: Detailed layer information
+print("\n--- Layer Details ---")
+embedding_model.print_layers()
+
+# Option 3: Model summary with parameter counts
+print("\n--- Model Summary ---")
+embedding_model.get_model_summary()
+
+#%%

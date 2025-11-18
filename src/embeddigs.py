@@ -43,3 +43,47 @@ class EmbeddingModel:
             Cosine similarity score(s).
         """
         return np.dot(embeddings1, embeddings2) / (np.linalg.norm(embeddings1) * np.linalg.norm(embeddings2))
+    
+    def print_architecture(self):
+        """
+        Print the model architecture showing all layers.
+        """
+        print(f"Model: {self.model_name}")
+        print("\n" + "="*80)
+        print(self.model)
+        print("="*80)
+    
+    def print_layers(self):
+        """
+        Print detailed information about each layer in the model.
+        """
+        print(f"Model: {self.model_name}\n")
+        
+        # Access the underlying transformer model
+        if hasattr(self.model, '_modules'):
+            for name, module in self.model._modules.items():
+                print(f"\n{name}:")
+                print(f"  Type: {type(module).__name__}")
+                if hasattr(module, '_modules'):
+                    for subname, submodule in module._modules.items():
+                        print(f"    {subname}: {type(submodule).__name__}")
+    
+    def get_model_summary(self):
+        """
+        Print model summary with parameter counts.
+        """
+        print(f"Model: {self.model_name}\n")
+        
+        total_params = sum(p.numel() for p in self.model.parameters())
+        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        
+        print(f"Total parameters: {total_params:,}")
+        print(f"Trainable parameters: {trainable_params:,}")
+        print(f"\nArchitecture:")
+        print("-" * 80)
+        
+        for name, module in self.model.named_modules():
+            if name:  # Skip the root module
+                num_params = sum(p.numel() for p in module.parameters(recurse=False))
+                if num_params > 0:
+                    print(f"{name}: {type(module).__name__} ({num_params:,} params)")
